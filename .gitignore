@@ -1,0 +1,10 @@
+# Ignore all ZIP archive files
+# I am always generating so many of these and keeping binaries of these is a waste of space.
+*.zip
+*.pem         # Private keys
+*.key         # SSL keys
+*.crt         # Certificates
+*.env         # Environment files (often contain secrets)
+*.secret
+*.token
+
