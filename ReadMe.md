@@ -1,0 +1,2 @@
+- [Demo Video](https://www.youtube.com/watch?v=T0xrbqZ7O0w)
+- [Privacy Policy](https://paprika-ditch.github.io/Reddit-Blocker-Chrome/privacy)
