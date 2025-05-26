@@ -4,21 +4,14 @@
   "version": "1",
   "description": "Blocks reddit.com and YouTube Shorts with a toggle feature.",
   "permissions": [
-    "storage",                  
-    "declarativeNetRequest",    
-    "alarms"                    
-  ],
-  "host_permissions": [         
-    "*://*.reddit.com/*",
-    "*://reddit.com/*",
-    "*://youtube.com/shorts/*",
-    "*://www.youtube.com/shorts/*",
-    "*://*.youtube.com/*shorts*"
+    "storage",
+    "declarativeNetRequest",
+    "alarms"
   ],
   "background": {
-    "service_worker": "background.js" 
+    "service_worker": "background.js"
   },
-  "action": {                     
+  "action": {
     "default_icon": "icons/lightdarkmode48.png",
     "default_popup": "popup.html"
   },
