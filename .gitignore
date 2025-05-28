@@ -7,5 +7,3 @@
 *.env         # Environment files (often contain secrets)
 *.secret
 *.token
-
-# End of file
