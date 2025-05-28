@@ -1,7 +1,9 @@
 {
   "manifest_version": 3,
   "name": "Reddit Blocker Chrome",
-  "version": "1.0.2",
+  "short_name": "Reddit Blocker",
+  "version": "1.0.3",
+  "version_name": "1.0.3 – Blocks Reddit & Shorts",         
   "description": "Blocks reddit.com and YouTube Shorts with a toggle feature.",
   "permissions": [
     "storage",
@@ -16,7 +18,13 @@
     "default_popup": "popup.html"
   },
   "icons": {
-    "48": "icons/lightdarkmode48.png"
-  },
-  "offline_enabled": true
+    "16": "icons/lightdarkmode16.png",
+    "48": "icons/lightdarkmode48.png",
+    "128": "icons/lightdarkmode128.png"
+    },
+  "offline_enabled": true,
+  "homepage_url": "https://github.com/Paprika-Ditch/Reddit-Blocker-Chrome",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none';"
+  }
 }
