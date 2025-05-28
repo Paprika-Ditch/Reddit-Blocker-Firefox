@@ -5,3 +5,8 @@ Reddit Blocker Chrome is a simple yet powerful Chrome extension designed to help
 - [Demo Video](https://www.youtube.com/watch?v=T0xrbqZ7O0w)
 - [Privacy Policy](https://paprika-ditch.github.io/Reddit-Blocker-Chrome/privacy)
 - [Website](https://paprika-ditch.github.io/Reddit-Blocker-Chrome/)
+
+
+## License Info:
+This program is licensed under the GNU General Public License v3.0 or later.
+See the LICENSE file for additional terms regarding publicity and endorsement.

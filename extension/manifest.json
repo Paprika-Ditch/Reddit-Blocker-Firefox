@@ -17,5 +17,6 @@
   },
   "icons": {
     "48": "icons/lightdarkmode48.png"
-  }
+  },
+  "offline_enabled": true
 }
