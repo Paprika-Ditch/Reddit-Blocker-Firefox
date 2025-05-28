@@ -1,30 +1,66 @@
-// Wait for the popup's DOM to fully load before running script
+let timerInterval = null;
+
 document.addEventListener('DOMContentLoaded', () => {
-  // Get a reference to the toggle button element in the popup
   const toggleButton = document.getElementById('toggleButton');
 
+  // Function to start or stop countdown based on blocking state
+  function checkCountdown(isBlocking, resumeTime) {
+    // Clear any previous interval
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+
+    if (!isBlocking && resumeTime && resumeTime > Date.now()) {
+      // Start countdown
+      updateCountdownButton(resumeTime);
+      timerInterval = setInterval(() => {
+        updateCountdownButton(resumeTime);
+      }, 1000);
+    } else {
+      // Not counting down, just show enable/disable button
+      toggleButton.textContent = isBlocking
+        ? 'Disable for 5 min'
+        : 'Re-enabling in 5 min...';
+    }
+  }
+
+  // Update the countdown button label
+  function updateCountdownButton(resumeTime) {
+    const remainingMs = resumeTime - Date.now();
+    if (remainingMs > 0) {
+      const min = Math.floor(remainingMs / 60000);
+      const sec = Math.floor((remainingMs % 60000) / 1000);
+      toggleButton.textContent = `Re-enabling in ${min}:${sec < 10 ? '0' : ''}${sec}...`;
+    } else {
+      // Time's up, switch UI back to normal
+      clearInterval(timerInterval);
+      timerInterval = null;
+      // Force reload the popup state from storage (gets new isBlocking)
+      chrome.storage.local.get('isBlocking', (data) => {
+        updateButton(data.isBlocking !== false);
+      });
+    }
+  }
+
+  // Combined state update
+  function updateButton(isBlocking) {
+    chrome.storage.local.get('resumeTime', (data) => {
+      checkCountdown(isBlocking, data.resumeTime);
+    });
+  }
+
   // Load the current blocking state from extension storage
-  chrome.storage.local.get('isBlocking', (data) => {
-    // If value is undefined, default to true (blocking enabled)
+  chrome.storage.local.get(['isBlocking', 'resumeTime'], (data) => {
     const isBlocking = data.isBlocking !== false;
-    updateButton(isBlocking); // Set initial button label
+    checkCountdown(isBlocking, data.resumeTime);
   });
 
-  // Add a click listener to the button to toggle the blocking state
   toggleButton.addEventListener('click', () => {
-    // Send a message to the background script to toggle blocking
     chrome.runtime.sendMessage({ action: 'toggleBlocking' }, (response) => {
-      // When background responds with new state, update button label
       if (response && typeof response.isBlocking === "boolean") {
         updateButton(response.isBlocking);
       }
     });
   });
-
-  // Updates the button's text based on current blocking state
-  function updateButton(isBlocking) {
-    toggleButton.textContent = isBlocking
-      ? 'Disable for 5 min' // When blocking is on
-      : 'Re-enabling in 5 min...'; // When blocking is temporarily off
-  }
 });

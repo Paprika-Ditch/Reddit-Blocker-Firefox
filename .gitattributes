@@ -1,22 +1,38 @@
-# Normalize text files (auto handles platform-specific line endings)
+# ----------------------------------------
+# Normalize text files (platform-safe defaults)
 * text=auto
 
-# Force LF line endings for source and config files
-*.js   text eol=lf
-*.json text eol=lf
-*.css  text eol=lf
-*.html text eol=lf
-*.md   text eol=lf
+# ----------------------------------------
+# Force LF line endings for code & configs
+*.py     text eol=lf
+*.sh     text eol=lf
+*.yml    text eol=lf
+*.yaml   text eol=lf
+*.ini    text eol=lf
+*.cfg    text eol=lf
+*.conf   text eol=lf
+*.md     text eol=lf
+*.txt    text eol=lf
+*.json   text eol=lf
+*.env    text eol=lf
+*.gitignore text eol=lf
+*.gitattributes text eol=lf
 
-# Treat non-text files as binary to prevent line ending corruption or bad diffs
-# These include images, SVGs, and archives
-*.svg  binary
-*.png  binary
-*.jpg  binary
-*.jpeg binary
-*.gif  binary
-*.zip  binary
-*.ico  binary
-*.xcf  binary
-
-# End of file
+# ----------------------------------------
+# Treat binary files as binary (no diff/line conversion)
+*.jpg    binary
+*.jpeg   binary
+*.png    binary
+*.gif    binary
+*.svg    binary
+*.ico    binary
+*.zip    binary
+*.tar    binary
+*.gz     binary
+*.xz     binary
+*.pdf    binary
+*.db     binary
+*.log    binary
+*.pyc    binary
+*.pyo    binary
+*.xcf    binary

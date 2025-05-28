@@ -4,7 +4,7 @@
   "short_name": "Reddit Blocker",
   "version": "1.1.0",
   "version_name": "1.1.0 – Blocks Reddit & Shorts",         
-  "description": "Blocks reddit.com and YouTube Shorts with a toggle feature.",
+  "description": "Blocks reddit.com with a toggle feature.",
   "permissions": [
     "storage",
     "declarativeNetRequest",

@@ -3,7 +3,6 @@ let isBlocking = true;
 
 // Define unique rule IDs for declarativeNetRequest rules
 const REDDIT_RULE_ID = 1;
-const YOUTUBE_SHORTS_RULE_ID = 2;
 
 // The rules to block Reddit and YouTube Shorts
 const blockingRules = [
@@ -19,18 +18,6 @@ const blockingRules = [
       ]
     }
   },
-  {
-    id: YOUTUBE_SHORTS_RULE_ID,
-    priority: 1,
-    action: { type: "block" },
-    condition: {
-      urlFilter: "*://*.youtube.com/*shorts*",
-      resourceTypes: [
-        "main_frame", "sub_frame", "stylesheet", "script", "image", "font",
-        "object", "xmlhttprequest", "ping", "media", "websocket", "csp_report", "other"
-      ]
-    }
-  }
 ];
 
 const DISABLE_ALARM_NAME = "reEnableBlocking";
@@ -45,16 +32,19 @@ async function updateBlockingState(block) {
     await chrome.storage.local.set({ isBlocking });
 
     if (block) {
-      // Add the blocking rules, remove any existing first
       await chrome.declarativeNetRequest.updateDynamicRules({
         addRules: blockingRules,
-        removeRuleIds: [REDDIT_RULE_ID, YOUTUBE_SHORTS_RULE_ID]
+        removeRuleIds: [REDDIT_RULE_ID]
       });
+      // Remove any stored resumeTime if present
+      await chrome.storage.local.remove('resumeTime');
     } else {
-      // Remove the blocking rules
       await chrome.declarativeNetRequest.updateDynamicRules({
-        removeRuleIds: [REDDIT_RULE_ID, YOUTUBE_SHORTS_RULE_ID]
+        removeRuleIds: [REDDIT_RULE_ID]
       });
+      // Set resume time (5 min from now)
+      const resumeTime = Date.now() + 5 * 60 * 1000;
+      await chrome.storage.local.set({ resumeTime });
     }
   } catch (e) {
     console.error("Failed to update blocking state:", e);
@@ -66,10 +56,15 @@ async function updateBlockingState(block) {
  */
 async function init() {
   try {
-    const data = await chrome.storage.local.get("isBlocking");
+    const data = await chrome.storage.local.get(["isBlocking", "resumeTime"]);
     isBlocking = data.isBlocking !== false;
     await updateBlockingState(isBlocking);
     chrome.alarms.clear(DISABLE_ALARM_NAME);
+
+    // Clean up resumeTime if blocking is enabled
+    if (isBlocking && data.resumeTime) {
+      await chrome.storage.local.remove('resumeTime');
+    }
   } catch (e) {
     console.error("Failed to initialize extension:", e);
   }

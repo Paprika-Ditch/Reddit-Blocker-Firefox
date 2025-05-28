@@ -1,9 +1,39 @@
-# Ignore all ZIP archive files
-# I am always generating so many of these and keeping binaries of these is a waste of space.
-*.zip
-*.pem         # Private keys
-*.key         # SSL keys
-*.crt         # Certificates
-*.env         # Environment files (often contain secrets)
+# Private Keys
+*.pem
+*.key
+*.crt
+*.env
 *.secret
 *.token
+
+# Archives & Binaries
+*.zip
+*.tar
+*.gz
+*.7z
+*.exe
+*.dll
+*.so
+*.bin
+*.out
+*.obj
+
+# Developer Tools
+.idea/          # JetBrains IDEs
+.vscode/        # VS Code
+*.swp           # Vim swap files
+*.DS_Store      # macOS Finder metadata
+Thumbs.db       # Windows Explorer metadata
+
+# Build Objects and Generated files
+/build/
+dist/
+target/
+node_modules/
+*.class
+*.o
+*.pyc
+*.log
+
+# Obsidian
+.obsidian/
