@@ -13,8 +13,10 @@ const blockingRules = [
     action: { type: "block" },
     condition: {
       urlFilter: "*://*.reddit.com/*",
-      // Apply to common resource types that constitute a page load or its assets
-      resourceTypes: ["main_frame", "sub_frame", "stylesheet", "script", "image", "font", "object", "xmlhttprequest", "ping", "media", "websocket", "csp_report", "other"]
+      resourceTypes: [
+        "main_frame", "sub_frame", "stylesheet", "script", "image", "font",
+        "object", "xmlhttprequest", "ping", "media", "websocket", "csp_report", "other"
+      ]
     }
   },
   {
@@ -22,13 +24,15 @@ const blockingRules = [
     priority: 1,
     action: { type: "block" },
     condition: {
-      urlFilter: "*://*.youtube.com/*shorts*", // This covers youtube.com/shorts and www.youtube.com/shorts
-      resourceTypes: ["main_frame", "sub_frame", "stylesheet", "script", "image", "font", "object", "xmlhttprequest", "ping", "media", "websocket", "csp_report", "other"]
+      urlFilter: "*://*.youtube.com/*shorts*",
+      resourceTypes: [
+        "main_frame", "sub_frame", "stylesheet", "script", "image", "font",
+        "object", "xmlhttprequest", "ping", "media", "websocket", "csp_report", "other"
+      ]
     }
   }
 ];
 
-// Name for the alarm used to re-enable blocking
 const DISABLE_ALARM_NAME = "reEnableBlocking";
 
 /**
@@ -36,21 +40,24 @@ const DISABLE_ALARM_NAME = "reEnableBlocking";
  * @param {boolean} block - True to enable blocking, false to disable.
  */
 async function updateBlockingState(block) {
-  isBlocking = block;
-  await chrome.storage.local.set({ isBlocking });
+  try {
+    isBlocking = block;
+    await chrome.storage.local.set({ isBlocking });
 
-  if (block) {
-    // Add the blocking rules
-    await chrome.declarativeNetRequest.updateDynamicRules({
-      addRules: blockingRules,
-      // Remove them first in case they were somehow already active (prevents duplicates)
-      removeRuleIds: [REDDIT_RULE_ID, YOUTUBE_SHORTS_RULE_ID]
-    });
-  } else {
-    // Remove the blocking rules
-    await chrome.declarativeNetRequest.updateDynamicRules({
-      removeRuleIds: [REDDIT_RULE_ID, YOUTUBE_SHORTS_RULE_ID]
-    });
+    if (block) {
+      // Add the blocking rules, remove any existing first
+      await chrome.declarativeNetRequest.updateDynamicRules({
+        addRules: blockingRules,
+        removeRuleIds: [REDDIT_RULE_ID, YOUTUBE_SHORTS_RULE_ID]
+      });
+    } else {
+      // Remove the blocking rules
+      await chrome.declarativeNetRequest.updateDynamicRules({
+        removeRuleIds: [REDDIT_RULE_ID, YOUTUBE_SHORTS_RULE_ID]
+      });
+    }
+  } catch (e) {
+    console.error("Failed to update blocking state:", e);
   }
 }
 
@@ -58,13 +65,14 @@ async function updateBlockingState(block) {
  * Called at startup or installation to initialize the blocking state.
  */
 async function init() {
-  const data = await chrome.storage.local.get("isBlocking");
-  // Default to blocking if the value is undefined or explicitly true
-  isBlocking = data.isBlocking !== false;
-  await updateBlockingState(isBlocking);
-
-  // Clear any old alarms that might be pending from a previous session
-  chrome.alarms.clear(DISABLE_ALARM_NAME);
+  try {
+    const data = await chrome.storage.local.get("isBlocking");
+    isBlocking = data.isBlocking !== false;
+    await updateBlockingState(isBlocking);
+    chrome.alarms.clear(DISABLE_ALARM_NAME);
+  } catch (e) {
+    console.error("Failed to initialize extension:", e);
+  }
 }
 
 // Called when the extension is first installed
@@ -89,6 +97,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
         // Respond with the new blocking state after state has been updated
         sendResponse({ isBlocking: newState });
+      })
+      .catch((e) => {
+        // Log error and respond with last known state
+        console.error("Error toggling blocking state:", e);
+        sendResponse({ isBlocking });
       });
 
     // Return true to indicate that sendResponse will be called asynchronously
@@ -99,6 +112,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Listener for when an alarm fires (e.g., the 5-minute re-enable alarm)
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === DISABLE_ALARM_NAME) {
-    updateBlockingState(true); // Re-enable blocking
+    updateBlockingState(true).catch((e) => {
+      console.error("Error re-enabling blocking after alarm:", e);
+    });
   }
 });
