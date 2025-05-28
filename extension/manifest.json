@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Reddit Blocker Chrome",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Blocks reddit.com and YouTube Shorts with a toggle feature.",
   "permissions": [
     "storage",
