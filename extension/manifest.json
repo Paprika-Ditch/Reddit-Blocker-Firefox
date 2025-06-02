@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "Reddit Blocker Chrome",
   "short_name": "Reddit Blocker",
-  "version": "1.1.0",
-  "version_name": "1.1.0 – Reddit Blocker",         
+  "version": "1.2.0",
+  "version_name": "1.2.0 – Reddit Blocker",         
   "description": "Blocks reddit.com with a toggle feature.",
   "permissions": [
     "storage",

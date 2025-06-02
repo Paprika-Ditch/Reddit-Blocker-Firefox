@@ -1,10 +1,10 @@
-// Keeps track of whether blocking is currently enabled
+// Keeps track of whether blocking is currently enabled (in-memory)
 let isBlocking = true;
 
 // Define unique rule IDs for declarativeNetRequest rules
 const REDDIT_RULE_ID = 1;
 
-// The rules to block Reddit and YouTube Shorts
+// The rules to block Reddit
 const blockingRules = [
   {
     id: REDDIT_RULE_ID,
@@ -23,28 +23,32 @@ const blockingRules = [
 const DISABLE_ALARM_NAME = "reEnableBlocking";
 
 /**
- * Updates the declarativeNetRequest rules based on the blocking state.
+ * Updates the declarativeNetRequest rules and storage based on the blocking state.
  * @param {boolean} block - True to enable blocking, false to disable.
  */
 async function updateBlockingState(block) {
   try {
-    isBlocking = block;
+    isBlocking = block; // Update in-memory state
     await chrome.storage.local.set({ isBlocking });
 
     if (block) {
+      console.log("updateBlockingState: Enabling blocking.");
       await chrome.declarativeNetRequest.updateDynamicRules({
         addRules: blockingRules,
+        // This ensures that rule ID 1 is effectively updated/added.
+        // declarativeNetRequest removes specified rule IDs first, then adds the new rules.
         removeRuleIds: [REDDIT_RULE_ID]
       });
-      // Remove any stored resumeTime if present
       await chrome.storage.local.remove('resumeTime');
+      console.log("updateBlockingState: resumeTime removed.");
     } else {
+      console.log("updateBlockingState: Disabling blocking.");
       await chrome.declarativeNetRequest.updateDynamicRules({
         removeRuleIds: [REDDIT_RULE_ID]
       });
-      // Set resume time (5 min from now)
       const resumeTime = Date.now() + 5 * 60 * 1000;
       await chrome.storage.local.set({ resumeTime });
+      console.log(`updateBlockingState: Blocking disabled. Resume time set to ${new Date(resumeTime)}`);
     }
   } catch (e) {
     console.error("Failed to update blocking state:", e);
@@ -52,21 +56,40 @@ async function updateBlockingState(block) {
 }
 
 /**
- * Called at startup or installation to initialize the blocking state.
+ * Called at startup or installation.
+ * Resets the extension to its default state: blocking enabled.
  */
 async function init() {
   try {
-    const data = await chrome.storage.local.get(["isBlocking", "resumeTime"]);
-    isBlocking = data.isBlocking !== false;
-    await updateBlockingState(isBlocking);
-    chrome.alarms.clear(DISABLE_ALARM_NAME);
+    console.log("Extension initializing: Resetting to default blocking state.");
 
-    // Clean up resumeTime if blocking is enabled
-    if (isBlocking && data.resumeTime) {
-      await chrome.storage.local.remove('resumeTime');
-    }
+    // Clear any alarm that might have persisted from a previous session.
+    await chrome.alarms.clear(DISABLE_ALARM_NAME);
+    console.log("Init: Cleared any existing alarms.");
+
+    // Force the extension into its default state: blocking enabled.
+    // updateBlockingState(true) will handle:
+    // - Setting isBlocking = true (in-memory and storage)
+    // - Applying declarativeNetRequest rules for blocking
+    // - Removing 'resumeTime' from storage
+    await updateBlockingState(true);
+    console.log("Init: Extension state reset. Blocking is now enabled.");
   } catch (e) {
-    console.error("Failed to initialize extension:", e);
+    console.error("Failed to initialize and reset extension state:", e);
+    // If the main init fails, as a last resort, try to set a basic blocking state.
+    // This is a "best effort" and might not always succeed if Chrome APIs are failing.
+    try {
+        console.warn("Init failed, attempting direct fallback to enable blocking.");
+        isBlocking = true;
+        await chrome.storage.local.set({ isBlocking: true });
+        await chrome.declarativeNetRequest.updateDynamicRules({
+            addRules: blockingRules,
+            removeRuleIds: [REDDIT_RULE_ID]
+        });
+        await chrome.storage.local.remove('resumeTime');
+    } catch (fallbackError) {
+        console.error("Init: Fallback attempt to enable blocking also failed:", fallbackError);
+    }
   }
 }
 
@@ -79,34 +102,39 @@ chrome.runtime.onStartup.addListener(init);
 // Handles messages from popup or other parts of the extension
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "toggleBlocking") {
-    const newState = !isBlocking;
+    const newState = !isBlocking; // Toggle based on current in-memory state
 
-    // Clear any existing alarm if the user manually toggles
-    chrome.alarms.clear(DISABLE_ALARM_NAME);
+    // Clear any existing alarm first. This is important if the user manually
+    // re-enables blocking before a "disable" alarm fires, or chains disable actions.
+    chrome.alarms.clear(DISABLE_ALARM_NAME).then(() => {
+      console.log("onMessage: Cleared alarm due to manual toggle.");
+      return updateBlockingState(newState); // Update state (will set new resumeTime if disabling)
+    }).then(() => {
+      if (!newState) { // If blocking was just disabled
+        // updateBlockingState(false) has set a new resumeTime.
+        // Create an alarm to re-enable blocking in 5 minutes.
+        chrome.alarms.create(DISABLE_ALARM_NAME, { delayInMinutes: 5 });
+        console.log("onMessage: Blocking disabled, 5-minute re-enable alarm created.");
+      } else {
+        console.log("onMessage: Blocking enabled manually.");
+        // If blocking is enabled, updateBlockingState(true) already cleared resumeTime.
+      }
+      sendResponse({ isBlocking: newState });
+    }).catch((e) => {
+      console.error("Error toggling blocking state:", e);
+      sendResponse({ isBlocking }); // Respond with the last known in-memory state
+    });
 
-    updateBlockingState(newState)
-      .then(() => {
-        // If disabling temporarily, set a 5-minute alarm to re-enable it
-        if (!newState) {
-          chrome.alarms.create(DISABLE_ALARM_NAME, { delayInMinutes: 5 });
-        }
-        // Respond with the new blocking state after state has been updated
-        sendResponse({ isBlocking: newState });
-      })
-      .catch((e) => {
-        // Log error and respond with last known state
-        console.error("Error toggling blocking state:", e);
-        sendResponse({ isBlocking });
-      });
-
-    // Return true to indicate that sendResponse will be called asynchronously
-    return true;
+    return true; // Indicates sendResponse will be called asynchronously
   }
 });
 
-// Listener for when an alarm fires (e.g., the 5-minute re-enable alarm)
+// Listener for when an alarm fires
 chrome.alarms.onAlarm.addListener((alarm) => {
+  console.log(`Alarm fired: ${alarm.name}`);
   if (alarm.name === DISABLE_ALARM_NAME) {
+    console.log("DISABLE_ALARM_NAME alarm received. Re-enabling blocking.");
+    // The alarm fired, so re-enable blocking.
     updateBlockingState(true).catch((e) => {
       console.error("Error re-enabling blocking after alarm:", e);
     });
