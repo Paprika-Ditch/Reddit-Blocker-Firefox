@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Reddit Blocker Chrome",
+  "name": "Reddit Blocker Firefox",
   "short_name": "Reddit Blocker",
   "version": "1.2.0",
   "version_name": "1.2.0 – Reddit Blocker",         
@@ -23,7 +23,7 @@
     "128": "icons/lightdarkmode128.png"
     },
   "offline_enabled": true,
-  "homepage_url": "https://github.com/Paprika-Ditch/Reddit-Blocker-Chrome",
+  "homepage_url": "https://github.com/Paprika-Ditch/Reddit-Blocker-Firefox",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none';"
   }
