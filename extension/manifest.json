@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Reddit Blocker Firefox",
+  "name": "Reddit Blocker",
   "short_name": "Reddit Blocker",
   "version": "1.2.0",
-  "version_name": "1.2.0 – Reddit Blocker",         
+  "version_name": "1.2.0 – Reddit Blocker",
   "description": "Blocks reddit.com with a toggle feature.",
   "permissions": [
     "storage",
@@ -11,7 +11,7 @@
     "alarms"
   ],
   "background": {
-    "service_worker": "background.js"
+    "scripts": ["background.js"]
   },
   "action": {
     "default_icon": "icons/lightdarkmode48.png",
@@ -21,10 +21,16 @@
     "16": "icons/lightdarkmode16.png",
     "48": "icons/lightdarkmode48.png",
     "128": "icons/lightdarkmode128.png"
-    },
+  },
   "offline_enabled": true,
   "homepage_url": "https://github.com/Paprika-Ditch/Reddit-Blocker-Firefox",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none';"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "reddit-blocker-firefox@paprika-ditch.github.io",
+      "strict_min_version": "130.0"
+    }
   }
 }
