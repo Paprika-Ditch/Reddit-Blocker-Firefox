@@ -1,3 +1,4 @@
+let currentChallenge = null;
 // Keeps track of whether blocking is currently enabled (in-memory)
 let isBlocking = true;
 
@@ -101,33 +102,51 @@ chrome.runtime.onStartup.addListener(init);
 
 // Handles messages from popup or other parts of the extension
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "toggleBlocking") {
-    const newState = !isBlocking; // Toggle based on current in-memory state
-
-    // Clear any existing alarm first. This is important if the user manually
-    // re-enables blocking before a "disable" alarm fires, or chains disable actions.
-    chrome.alarms.clear(DISABLE_ALARM_NAME).then(() => {
-      console.log("onMessage: Cleared alarm due to manual toggle.");
-      return updateBlockingState(newState); // Update state (will set new resumeTime if disabling)
-    }).then(() => {
-      if (!newState) { // If blocking was just disabled
-        // updateBlockingState(false) has set a new resumeTime.
-        // Create an alarm to re-enable blocking in 5 minutes.
-        chrome.alarms.create(DISABLE_ALARM_NAME, { delayInMinutes: 5 });
-        console.log("onMessage: Blocking disabled, 5-minute re-enable alarm created.");
-      } else {
-        console.log("onMessage: Blocking enabled manually.");
-        // If blocking is enabled, updateBlockingState(true) already cleared resumeTime.
-      }
-      sendResponse({ isBlocking: newState });
-    }).catch((e) => {
-      console.error("Error toggling blocking state:", e);
-      sendResponse({ isBlocking }); // Respond with the last known in-memory state
+  if (message.type === "getStatus") {
+    chrome.storage.local.get(["isBlocking", "resumeTime"], (data) => {
+      sendResponse({
+        isBlocking: data.isBlocking !== false,
+        resumeTime: data.resumeTime || null,
+        challengeActive: !!currentChallenge
+      });
     });
+    return true;
+  }
 
-    return true; // Indicates sendResponse will be called asynchronously
+  if (message.type === "requestChallenge") {
+    const challenge = generateChallenge(10);
+    currentChallenge = challenge;
+    sendResponse({ challenge });
+    return true;
+  }
+
+  if (message.type === "submitChallenge") {
+    if (message.answer === currentChallenge) {
+      currentChallenge = null;
+      updateBlockingState(false).then(() => {
+        sendResponse({ success: true });
+      });
+    } else {
+      sendResponse({ success: false });
+    }
+    return true;
+  }
+
+  if (message.type === "reEnableNow") {
+    chrome.alarms.clear(DISABLE_ALARM_NAME).then(() => {
+      updateBlockingState(true).then(() => {
+        sendResponse({ success: true });
+      });
+    });
+    return true;
+  }
+
+  if (message.type === "cancelChallenge") {
+    currentChallenge = null;
+    return true;
   }
 });
+
 
 // Listener for when an alarm fires
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -137,6 +156,24 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     // The alarm fired, so re-enable blocking.
     updateBlockingState(true).catch((e) => {
       console.error("Error re-enabling blocking after alarm:", e);
+    });
+  }
+});
+
+function generateChallenge(length) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return result;
+}
+
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === "popup") {
+    port.onDisconnect.addListener(() => {
+      console.log("Popup closed — clearing currentChallenge");
+      currentChallenge = null;
     });
   }
 });
