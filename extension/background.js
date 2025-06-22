@@ -66,7 +66,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === "requestChallenge") {
-    const challenge = generateChallenge(10);
+    const length = 10 + Math.floor(Math.random() * 11); // random between 10 and 20
+    const challenge = generateChallenge(length);
     currentChallenge = challenge;
     sendResponse({ challenge });
     return true;
