@@ -40,7 +40,6 @@ toggleButton.addEventListener("click", () => {
   });
 });
 
-
 function showChallenge(code) {
   toggleButton.style.display = "none";
   challengeDiv.style.display = "block";
@@ -48,6 +47,16 @@ function showChallenge(code) {
   challengeInput.value = '';
   errorMsg.style.display = 'none';
   challengeInput.focus();
+
+    // Prevents copy and paste
+  challengeInput.addEventListener('copy', (e) => e.preventDefault());
+  challengeInput.addEventListener('cut', (e) => e.preventDefault());
+  challengeInput.addEventListener('paste', (e) => e.preventDefault());
+  challengeInput.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && ['v', 'c', 'x'].includes(e.key.toLowerCase())) {
+      e.preventDefault();
+    }
+  });
 
   confirmButton.onclick = () => {
     const answer = challengeInput.value.trim();
