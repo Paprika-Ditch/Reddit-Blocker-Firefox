@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Reddit Blocker",
   "short_name": "Reddit Blocker",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Blocks reddit.com with a toggle feature.",
   "permissions": [
     "storage",

@@ -28,12 +28,13 @@
 </head>
 <body>
   <button id="toggleButton">Loading...</button>
-
+  <button id="customDisableButton">Customized Disable</button>
   <!-- New challenge UI -->
   <div id="challengeContainer">
     <p>Type the characters below to confirm:</p>
     <div id="challengeText"></div>
     <input type="text" id="challengeInput" placeholder="Enter text here" />
+    <input type="number" id="customMinutesInput" placeholder="Minutes (e.g. 30)" min="1" max="60" style="display: none; margin-top: 5px;" />
     <button id="confirmButton">Confirm</button>
     <p id="errorMsg" style="color: red; display: none;">Incorrect — try again.</p>
   </div>
